@@ -7,32 +7,34 @@ from django.views.generic.base import RedirectView
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from otree import common
-
+import os
+from django.urls import include
+from django.urls import path
 
 ALWAYS_UNRESTRICTED = {
-    'AssignVisitorToRoom',
-    'InitializeParticipant',
-    'MTurkLandingPage',
-    'MTurkStart',
-    'JoinSessionAnonymously',
-    'OutOfRangeNotification',
-    'ParticipantRoomHeartbeat',
-    'ParticipantHeartbeatGBAT',
+    "AssignVisitorToRoom",
+    "InitializeParticipant",
+    "MTurkLandingPage",
+    "MTurkStart",
+    "JoinSessionAnonymously",
+    "OutOfRangeNotification",
+    "ParticipantRoomHeartbeat",
+    "ParticipantHeartbeatGBAT",
 }
 
 
 UNRESTRICTED_IN_DEMO_MODE = ALWAYS_UNRESTRICTED.union(
     {
-        'AdminReport',
-        'AdvanceSession',
-        'CreateDemoSession',
-        'DemoIndex',
-        'SessionSplitScreen',
-        'SessionDescription',
-        'SessionMonitor',
-        'SessionPayments',
-        'SessionData',
-        'SessionStartLinks',
+        "AdminReport",
+        "AdvanceSession",
+        "CreateDemoSession",
+        "DemoIndex",
+        "SessionSplitScreen",
+        "SessionDescription",
+        "SessionMonitor",
+        "SessionPayments",
+        "SessionData",
+        "SessionStartLinks",
     }
 )
 
@@ -44,7 +46,7 @@ def view_classes_from_module(module_name):
     return [
         ViewCls
         for _, ViewCls in inspect.getmembers(views_module)
-        if hasattr(ViewCls, 'url_pattern')
+        if hasattr(ViewCls, "url_pattern")
         and inspect.getmodule(ViewCls) == views_module
     ]
 
@@ -70,11 +72,11 @@ def url_patterns_from_builtin_module(module_name: str):
     for ViewCls in all_views:
         # automatically assign URL name for reverse(), it defaults to the
         # class's name
-        url_name = getattr(ViewCls, 'url_name', ViewCls.__name__)
+        url_name = getattr(ViewCls, "url_name", ViewCls.__name__)
 
-        if settings.AUTH_LEVEL == 'STUDY':
+        if settings.AUTH_LEVEL == "STUDY":
             unrestricted = url_name in ALWAYS_UNRESTRICTED
-        elif settings.AUTH_LEVEL == 'DEMO':
+        elif settings.AUTH_LEVEL == "DEMO":
             unrestricted = url_name in UNRESTRICTED_IN_DEMO_MODE
         else:
             unrestricted = True
@@ -101,8 +103,8 @@ def extensions_urlpatterns():
 
     urlpatterns = []
 
-    for url_module in get_extensions_modules('urls'):
-        urlpatterns += getattr(url_module, 'urlpatterns', [])
+    for url_module in get_extensions_modules("urls"):
+        urlpatterns += getattr(url_module, "urlpatterns", [])
 
     return urlpatterns
 
@@ -112,7 +114,7 @@ def extensions_export_urlpatterns():
     view_urls = []
 
     for ViewCls in view_classes:
-        if settings.AUTH_LEVEL in {'DEMO', 'STUDY'}:
+        if settings.AUTH_LEVEL in {"DEMO", "STUDY"}:
             as_view = login_required(ViewCls.as_view())
         else:
             as_view = ViewCls.as_view()
@@ -125,19 +127,19 @@ import django.contrib.auth.views as auth_views
 
 
 class LoginView(auth_views.LoginView):
-    template_name = 'otree/login.html'
+    template_name = "otree/login.html"
 
 
 class LogoutView(auth_views.LogoutView):
-    next_page = 'DemoIndex'
+    next_page = "DemoIndex"
 
 
 def get_urlpatterns():
 
     urlpatterns = [
-        urls.url(r'^$', RedirectView.as_view(url='/demo', permanent=True)),
-        urls.url(r'^accounts/login/$', LoginView.as_view(), name='login'),
-        urls.url(r'^accounts/logout/$', LogoutView.as_view(), name='logout'),
+        urls.url(r"^$", RedirectView.as_view(url="/demo", permanent=True)),
+        urls.url(r"^accounts/login/$", LoginView.as_view(), name="login"),
+        urls.url(r"^accounts/logout/$", LogoutView.as_view(), name="logout"),
     ]
 
     urlpatterns += staticfiles_urlpatterns()
@@ -158,12 +160,12 @@ def get_urlpatterns():
         views_module = common.get_pages_module(app_name)
         urlpatterns += url_patterns_from_app_pages(views_module.__name__, name_in_url)
 
-    urlpatterns += url_patterns_from_builtin_module('otree.views.participant')
-    urlpatterns += url_patterns_from_builtin_module('otree.views.demo')
-    urlpatterns += url_patterns_from_builtin_module('otree.views.admin')
-    urlpatterns += url_patterns_from_builtin_module('otree.views.room')
-    urlpatterns += url_patterns_from_builtin_module('otree.views.mturk')
-    urlpatterns += url_patterns_from_builtin_module('otree.views.export')
+    urlpatterns += url_patterns_from_builtin_module("otree.views.participant")
+    urlpatterns += url_patterns_from_builtin_module("otree.views.demo")
+    urlpatterns += url_patterns_from_builtin_module("otree.views.admin")
+    urlpatterns += url_patterns_from_builtin_module("otree.views.room")
+    urlpatterns += url_patterns_from_builtin_module("otree.views.mturk")
+    urlpatterns += url_patterns_from_builtin_module("otree.views.export")
 
     urlpatterns += extensions_urlpatterns()
     urlpatterns += extensions_export_urlpatterns()
@@ -201,3 +203,8 @@ def get_urlpatterns():
 
 
 urlpatterns = get_urlpatterns()
+
+DJANGO_BASE_URL = os.getenv("DJANGO_BASE_URL", None)
+if DJANGO_BASE_URL:
+    urlpatterns = [path(f"{DJANGO_BASE_URL}/", include(urlpatterns))]
+
