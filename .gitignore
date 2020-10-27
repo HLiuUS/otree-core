@@ -1,0 +1,18 @@
+venv
+*.pyc
+staticfiles
+./db.sqlite3
+.idea
+*~
+*.sqlite3
+_coverage_results/
+__temp_migrations/
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
